@@ -1,0 +1,49 @@
+df_groceries <- read.csv("sumit.csv")
+
+df_groceries$BILL_DATE = as.Date(df_groceries$BILL_DATE, format= "%d-%m-%Y")
+df_groceries = subset(df_groceries, BILL_DATE>= "2018-01-06" & BILL_DATE <= "2018-01-07")
+
+df_groceries <- subset(df_groceries, CATAGORY_NAME=="Boys")
+df_groceries <- subset(df_groceries, STORE=="BHI")
+df_groceries <- subset(df_groceries, TRANSACTION_PRISE>= 300)
+nrow(df_groceries)
+
+
+df_sorted <- df_groceries[order(df_groceries1$ï..SUM_BILL_NO),]
+df_sorted$ï..SUM_BILL_NO <- as.numeric(df_sorted$ï..SUM_BILL_NO)
+df_sorted$ITEMS <- as.factor(df_sorted$ITEMS)
+
+if(sessionInfo()['basePkgs']=="dplyr" | sessionInfo()['otherPkgs']=="dplyr"){
+  detach(package:dplyr, unload=TRUE)
+}
+library(plyr)
+df_itemList <- ddply(df_groceries, c("ï..SUM_BILL_NO"), function(df1)paste(df1$ITEMS,collapse = ","))
+
+df_itemList$TRANSACTION_PRICE <- NULL
+df_itemList$BILL_DATE <- NULL
+df_itemList$CATAGORY_NAME <- NULL
+df_itemList$SUB_CATAGORY_NAME <- NULL
+df_itemList$STORE <- NULL
+df_itemList$ï..SUM_BILL_NO <- NULL
+colnames(df_itemList) <- c("itemList")
+
+nrow(df_itemList)
+library(data.table)
+View(df_itemList)
+
+write.csv(df_itemList,"ItemList.csv", quote = FALSE, row.names = TRUE)
+
+
+
+library(arules)
+txn = read.transactions(file="ItemList.csv", rm.duplicates= FALSE, format="basket",sep=",",cols=1)
+basket_rules <- apriori(txn,parameter = list(maxlen=2,sup = 0.0001, conf = 0.5, target="rules"))
+
+if(sessionInfo()['basePkgs']=="tm" | sessionInfo()['otherPkgs']=="tm"){
+  detach(package:sentiment, unload=TRUE)
+  detach(package:tm, unload=TRUE)
+}
+
+
+Sub.association.rules <- apriori(txn, parameter = list(minlen=2,supp=0.001, conf=0.01),appearance = list(default="rhs",lhs="Jacket(Boys)"))
+inspect(head(sub.association.rules))
